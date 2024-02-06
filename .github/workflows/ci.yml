@@ -1,0 +1,29 @@
+name: build-deploy
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  build:
+    runs-on: self-hosted
+    steps: 
+    - name: Clone repository 
+      uses: actions/checkout@v4
+    - name: Build image
+      run: docker build . --tag=$GITHUB_JOB
+    - name: Remove image
+      run: docker image rm -f $GITHUB_JOB
+  deploy:
+    runs-on: self-hosted
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Clone repository 
+      uses: actions/checkout@v4
+    - name: Copy env
+      run: cp .env.example .env && sed -i -e "s/BACKEND_URL=http:\/\/127.0.0.1:3000/BACKEND_URL=http:\/\/34.90.111.185/g" .env && sed -i -e "s/NEXTAUTH_URL=http:\/\/localhost:4000/NEXTAUTH_URL=http:\/\/gotowynaobiad.pl/g" .env
+    - name: Google Storage images
+      run: mkdir images && gsutil cp -r gs://foodie_test/images .
+    - name: deploy
+      run: docker compose -f ci.docker-compose.yml up --build --detach --force-recreate

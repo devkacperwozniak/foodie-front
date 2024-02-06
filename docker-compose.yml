@@ -1,0 +1,10 @@
+services:
+  client:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    restart: always
+    volumes:
+      - .:/app
+    ports:
+      - '80:4000'
